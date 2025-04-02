@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: aggregator
+  rabbitmq:
+    host: localhost  # e.g., localhost
+    port: 5672                 # Default RabbitMQ port
+    username: guest    # Your RabbitMQ username
+    password: guest    # Your RabbitMQ password
+    #virtual-host: your_vhost # Optional: If you use a virtual host

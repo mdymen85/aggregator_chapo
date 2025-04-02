@@ -1,0 +1,21 @@
+version: "3.9"  # Or a compatible version
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.11-management  # Use the management image
+    ports:
+      - "5672:5672"  # AMQP port
+      - "15672:15672" # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq # Persist data (optional, but recommended)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest # Change these for production!
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  rabbitmq_data: # Named volume for RabbitMQ data persistence
