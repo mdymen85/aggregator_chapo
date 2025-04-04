@@ -7,3 +7,9 @@ spring:
     username: guest    # Your RabbitMQ username
     password: guest    # Your RabbitMQ password
     #virtual-host: your_vhost # Optional: If you use a virtual host
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mydatabase
+    username: myuser
+    password: mypassword
+    driver-class-name: org.postgresql.Driver
