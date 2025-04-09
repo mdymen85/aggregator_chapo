@@ -9,7 +9,8 @@ spring:
     #virtual-host: your_vhost # Optional: If you use a virtual host
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/mydatabase
-    username: myuser
-    password: mypassword
-    driver-class-name: org.postgresql.Driver
+    jdbcUrl: jdbc:mysql://localhost:3306/aggregator_chapo
+    username: root
+    password: mdymen_pass
+    driverClassName: com.mysql.cj.jdbc.Driver # Or the appropriate MySQL driver class
+
