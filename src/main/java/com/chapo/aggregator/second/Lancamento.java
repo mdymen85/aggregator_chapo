@@ -1,6 +1,7 @@
 package com.chapo.aggregator.second;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
@@ -8,7 +9,7 @@ import lombok.ToString;
 @Data
 @Builder
 @ToString
-public class Lancamento {
+public class Lancamento implements Serializable {
 
     @JsonProperty("conta")
     private Integer conta;

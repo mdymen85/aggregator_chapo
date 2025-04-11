@@ -2,29 +2,22 @@ package com.chapo.aggregator.second;
 
 import com.chapo.aggregator.ChapoConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
-import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.jdbc.store.JdbcMessageStore;
 import org.springframework.integration.store.MessageGroupStore;
-import org.springframework.integration.store.SimpleMessageStore;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.messaging.Message;
@@ -41,13 +34,8 @@ public class ChapoConfig {
 
     @Bean("requestChannel")
     public MessageChannel inputChannel() {
-        return new DirectChannel();
+        return new QueueChannel();
     }
-
-//    @Bean
-//    public JdbcMessageStore messageStore(DataSource dataSource) {
-//        return new JdbcMessageStore(dataSource);
-//    }
 
     @Bean
     public AmqpInboundChannelAdapter amqpInbound(CachingConnectionFactory connectionFactory, Queue myQueue) {
@@ -69,13 +57,20 @@ public class ChapoConfig {
         return new JdbcMessageStore(dataSource);
     }
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    private RabbitMQConfig rabbitMQConfig;
+
     @Bean
-    public IntegrationFlow chapoFlow(MessageGroupStore messageStore) {
+  public IntegrationFlow chapoFlow(MessageGroupStore messageStore) {
+//    public IntegrationFlow chapoFlow() {
         return IntegrationFlow
             .from("requestChannel")
             .aggregate(aggregatorSpec -> aggregatorSpec
                            .correlationStrategy(message -> ((Message<Lancamento>) message).getPayload().getConta())
-                           .releaseStrategy(group -> group.size() >= 2)
+                           .releaseStrategy(group -> group.size() >= 5)
                            .outputProcessor(group -> {
                                Lote lote = Lote.criarLote();
                                group.getMessages().forEach(message -> lote.adicionarLancamento(((Message<Lancamento>) message).getPayload()));
@@ -84,13 +79,16 @@ public class ChapoConfig {
                            .messageStore(messageStore)
                            .expireGroupsUponCompletion(true)
                            .sendPartialResultOnExpiry(true)
-                           .groupTimeout(1000) // Optional: Add a timeout for incomplete groups
+//                           .groupTimeout(1000) // Optional: Add a timeout for incomplete groups
                       )
             .channel("outputChannel")
             .<Lote>handle(msgLote -> {
                 Lote lote = ((Lote)msgLote.getPayload());
                 lote.getLancamentos()
                     .forEach(l -> System.out.println(l.getConta() + " " + l.getDescricao() + " " + lote.getUuid()));
+
+                rabbitTemplate.setMessageConverter(new SimpleMessageConverter());
+                rabbitTemplate.convertAndSend(rabbitMQConfig.getDirectQueueName(), lote);
             })
             .get();
     }
@@ -102,7 +100,7 @@ public class ChapoConfig {
     public DataSourceInitializer dataSourceInitializer() {
         DataSourceInitializer initializer = new DataSourceInitializer();
         initializer.setDataSource(dataSource);
-        initializer.setDatabasePopulator(new ResourceDatabasePopulator(new ClassPathResource("org/springframework/integration/jdbc/schema-mysql.sql")));
+//        initializer.setDatabasePopulator(new ResourceDatabasePopulator(new ClassPathResource("org/springframework/integration/jdbc/schema-mysql.sql")));
         return initializer;
     }
 

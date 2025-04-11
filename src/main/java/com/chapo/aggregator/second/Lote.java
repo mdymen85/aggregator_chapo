@@ -1,12 +1,13 @@
 package com.chapo.aggregator.second;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.ToString;
 
 @ToString
-public class Lote {
+public class Lote implements Serializable {
 
     private List<Lancamento> lancamentos;
     private String uuid = UUID.randomUUID().toString();
