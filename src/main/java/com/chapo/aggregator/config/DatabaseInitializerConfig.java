@@ -1,4 +1,4 @@
-package com.chapo.aggregator.second;
+package com.chapo.aggregator.config;
 
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
@@ -16,12 +16,7 @@ public class DatabaseInitializerConfig {
     @Primary
     @ConfigurationProperties(prefix = "spring.datasource")
     public DataSource dataSource() {
-        var x = DataSourceBuilder.create();
-//            .driverClassName("com.mysql.cj.jdbc.Driver")
-//            .url("jdbc:mysql://localhost:3306/aggregator")
-//            .username("root")
-//            .password("mdymen_password");
-        return x.build();
+        return DataSourceBuilder.create().build();
     }
 
 }

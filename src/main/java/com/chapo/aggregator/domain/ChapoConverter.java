@@ -1,6 +1,6 @@
-package com.chapo.aggregator;
+package com.chapo.aggregator.domain;
 
-import com.chapo.aggregator.second.Lancamento;
+import com.chapo.aggregator.domain.dtos.LancamentoDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -26,7 +26,7 @@ public class ChapoConverter extends AllowedListDeserializingMessageConverter imp
         String payloadString = new String(payloadBytes, StandardCharsets.UTF_8); // Or another encoding
         System.out.println("Received message from RabbitMQ: " + payloadString);
         try {
-            return objectMapper.readValue(payloadString, Lancamento.class);
+            return objectMapper.readValue(payloadString, LancamentoDTO.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

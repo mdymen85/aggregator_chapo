@@ -14,3 +14,4 @@ spring:
     password: mdymen_pass
     driverClassName: com.mysql.cj.jdbc.Driver # Or the appropriate MySQL driver class
 
+

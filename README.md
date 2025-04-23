@@ -47,6 +47,9 @@ total
 Message example:
 { "conta":123, "descricao":"debito"}
 
+23-04-2025
+{ "agencia": 1, "conta":123, "descricao":"debito", "tipo":"C", "valor":4.1}
+
 
 
 

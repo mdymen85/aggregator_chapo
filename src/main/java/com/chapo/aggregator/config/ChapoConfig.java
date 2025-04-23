@@ -1,13 +1,16 @@
-package com.chapo.aggregator.second;
+package com.chapo.aggregator.config;
 
-import com.chapo.aggregator.ChapoConverter;
+import com.chapo.aggregator.domain.ChapoConverter;
+import com.chapo.aggregator.domain.dtos.LancamentoDTO;
+import com.chapo.aggregator.domain.LancamentoService;
+import com.chapo.aggregator.domain.dtos.LoteDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.sql.DataSource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +28,7 @@ import org.springframework.messaging.MessageChannel;
 
 @EnableIntegration
 @Configuration
+@Slf4j
 public class ChapoConfig {
 
     @Bean
@@ -63,18 +67,20 @@ public class ChapoConfig {
     @Autowired
     private RabbitMQConfig rabbitMQConfig;
 
+    @Autowired
+    private LancamentoService lancamentoService;
+
     @Bean
-  public IntegrationFlow chapoFlow(MessageGroupStore messageStore) {
-//    public IntegrationFlow chapoFlow() {
+    public IntegrationFlow chapoFlow(MessageGroupStore messageStore) {
         return IntegrationFlow
             .from("requestChannel")
             .aggregate(aggregatorSpec -> aggregatorSpec
-                           .correlationStrategy(message -> ((Message<Lancamento>) message).getPayload().getConta())
+                           .correlationStrategy(message -> ((Message<LancamentoDTO>) message).getPayload().getConta())
                            .releaseStrategy(group -> group.size() >= 5)
                            .outputProcessor(group -> {
-                               Lote lote = Lote.criarLote();
-                               group.getMessages().forEach(message -> lote.adicionarLancamento(((Message<Lancamento>) message).getPayload()));
-                               return lote;
+                               LoteDTO loteDTO = LoteDTO.criarLote();
+                               group.getMessages().forEach(message -> loteDTO.adicionarLancamento(((Message<LancamentoDTO>) message).getPayload()));
+                               return loteDTO;
                            })
                            .messageStore(messageStore)
                            .expireGroupsUponCompletion(true)
@@ -82,13 +88,14 @@ public class ChapoConfig {
 //                           .groupTimeout(1000) // Optional: Add a timeout for incomplete groups
                       )
             .channel("outputChannel")
-            .<Lote>handle(msgLote -> {
-                Lote lote = ((Lote)msgLote.getPayload());
-                lote.getLancamentos()
-                    .forEach(l -> System.out.println(l.getConta() + " " + l.getDescricao() + " " + lote.getUuid()));
+            .<LoteDTO>handle(msgLote -> {
+                LoteDTO loteDTO = ((LoteDTO)msgLote.getPayload());
+                lancamentoService.updateBalance(loteDTO);
 
-                rabbitTemplate.setMessageConverter(new SimpleMessageConverter());
-                rabbitTemplate.convertAndSend(rabbitMQConfig.getDirectQueueName(), lote);
+//                loteDTO.getLancamentoDTOS()
+//                       .forEach(l -> System.out.println(l.getConta() + " " + l.getDescricao() + " " + loteDTO.getUuid()));
+//                rabbitTemplate.setMessageConverter(new SimpleMessageConverter());
+//                rabbitTemplate.convertAndSend(rabbitMQConfig.getDirectQueueName(), loteDTO);
             })
             .get();
     }
@@ -100,7 +107,12 @@ public class ChapoConfig {
     public DataSourceInitializer dataSourceInitializer() {
         DataSourceInitializer initializer = new DataSourceInitializer();
         initializer.setDataSource(dataSource);
-//        initializer.setDatabasePopulator(new ResourceDatabasePopulator(new ClassPathResource("org/springframework/integration/jdbc/schema-mysql.sql")));
+        try {
+//            initializer.setDatabasePopulator(new ResourceDatabasePopulator(new ClassPathResource("org/springframework/integration/jdbc/schema-mysql.sql")));
+        } catch (Exception e) {
+//            log.warn("");
+        }
+
         return initializer;
     }
 

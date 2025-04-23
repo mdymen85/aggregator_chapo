@@ -1,4 +1,4 @@
-package com.chapo.aggregator.second;
+package com.chapo.aggregator.config;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
