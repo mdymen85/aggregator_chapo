@@ -1,8 +1,8 @@
 package com.chapo.aggregator.config;
 
 import com.chapo.aggregator.domain.ChapoConverter;
-import com.chapo.aggregator.domain.dtos.LancamentoDTO;
 import com.chapo.aggregator.domain.LancamentoService;
+import com.chapo.aggregator.domain.dtos.LancamentoDTO;
 import com.chapo.aggregator.domain.dtos.LoteDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.sql.DataSource;
@@ -14,7 +14,6 @@ import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.config.EnableIntegration;
@@ -22,13 +21,13 @@ import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.jdbc.store.JdbcMessageStore;
 import org.springframework.integration.store.MessageGroupStore;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
 @EnableIntegration
 @Configuration
 @Slf4j
+//@OnAggregatorEnabled
 public class ChapoConfig {
 
     @Bean
@@ -76,7 +75,7 @@ public class ChapoConfig {
             .from("requestChannel")
             .aggregate(aggregatorSpec -> aggregatorSpec
                            .correlationStrategy(message -> ((Message<LancamentoDTO>) message).getPayload().getConta())
-                           .releaseStrategy(group -> group.size() >= 5)
+                           .releaseStrategy(group -> group.size() >= 1)
                            .outputProcessor(group -> {
                                LoteDTO loteDTO = LoteDTO.criarLote();
                                group.getMessages().forEach(message -> loteDTO.adicionarLancamento(((Message<LancamentoDTO>) message).getPayload()));

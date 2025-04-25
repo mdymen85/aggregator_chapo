@@ -13,23 +13,23 @@ public class LoteDTO implements Serializable {
 
     private Integer agencia;
     private Long conta;
-    private List<LancamentoDTO> lancamentoDTOS;
+    private List<LancamentoDTO> lancamentos;
     private String uuid = UUID.randomUUID().toString();
 
     public static LoteDTO criarLote() {
         LoteDTO lote = new LoteDTO();
-        lote.lancamentoDTOS = new ArrayList<>();
+        lote.lancamentos = new ArrayList<>();
         return lote;
     }
 
     public void adicionarLancamento(LancamentoDTO lancamentoDTO) {
         agencia = lancamentoDTO.getAgencia();
         conta = lancamentoDTO.getConta();
-        this.lancamentoDTOS.add(lancamentoDTO);
+        this.lancamentos.add(lancamentoDTO);
     }
 
-    public List<LancamentoDTO> getLancamentoDTOS() {
-        return this.lancamentoDTOS;
+    public List<LancamentoDTO> getLancamentos() {
+        return this.lancamentos;
     }
 
     public String getUuid() {

@@ -45,4 +45,8 @@ public class Conta {
         this.saldo.add(saldo);
     }
 
+    public BigDecimal getSaldo() {
+        return saldo;
+    }
+
 }
