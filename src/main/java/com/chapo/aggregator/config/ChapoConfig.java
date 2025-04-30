@@ -75,7 +75,7 @@ public class ChapoConfig {
             .from("requestChannel")
             .aggregate(aggregatorSpec -> aggregatorSpec
                            .correlationStrategy(message -> ((Message<LancamentoDTO>) message).getPayload().getConta())
-                           .releaseStrategy(group -> group.size() >= 1)
+                           .releaseStrategy(group -> group.size() >= 10)
                            .outputProcessor(group -> {
                                LoteDTO loteDTO = LoteDTO.criarLote();
                                group.getMessages().forEach(message -> loteDTO.adicionarLancamento(((Message<LancamentoDTO>) message).getPayload()));

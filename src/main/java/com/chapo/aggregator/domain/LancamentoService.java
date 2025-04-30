@@ -3,6 +3,8 @@ package com.chapo.aggregator.domain;
 import com.chapo.aggregator.domain.dtos.LancamentoDTO;
 import com.chapo.aggregator.domain.dtos.LoteDTO;
 import com.chapo.aggregator.domain.entities.Conta;
+import com.chapo.aggregator.domain.entities.Lancamento;
+import com.chapo.aggregator.domain.entities.TipoLancamento;
 import com.chapo.aggregator.domain.repository.ContaRepository;
 import com.chapo.aggregator.domain.repository.LancamentoRepository;
 import java.math.BigDecimal;
@@ -16,6 +18,36 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 //todo: evaluate use cache for the checking account
 public class LancamentoService {
+
+    /*
+        1 per Lote
+        1746012082798 - 1746012123280 = 40.482 seconds
+        1746012123351 - 1746012161730 = 38.379 seconds
+        1746012161795 - 1746012199431 = 37.636 seconds
+
+        5 per Lote
+        1746012827975 - 1746012848551 = 20.576 seconds
+        1746012848734 - 1746012867333 = 18.599 seconds
+        1746012867494 - 1746012887373 - 19.879 seconds
+
+        5 por lote sem NET
+        1746013293222 - 1746013312618 = 19.396 seconds
+        1746013312781 - 1746013331611 = 18.830 seconds
+        1746013331805 - 1746013350367 = 18.562 seconds
+
+        1 por lote salvando o lançamento
+        1746014163450 - 1746014202242 = 38.792 seconds
+        1746014202304 - 1746014241943 = 39.639 seconds
+        1746014242018 - 1746014286680 = 44.662 seconds
+
+        10 por lote com net
+        1746014374700 - 1746014390022 = 15.322 seconds
+        1746014390306 - 1746014406980 = 16.674 seconds
+        1746014407280 - 1746014423354 = 16.074 seconds
+
+
+
+     */
 
     private static Integer MESSAGE_COUNT = 0;
 
@@ -31,8 +63,10 @@ public class LancamentoService {
 
         int quantity = loteDTO.getLancamentos().size();
 
+        long init = 0;
         if (MESSAGE_COUNT == 0) {
-            System.out.println("INIT : " + System.currentTimeMillis());
+            init = System.currentTimeMillis();
+            System.out.println("INIT : " + init);
         }
 
         MESSAGE_COUNT = MESSAGE_COUNT + quantity;
@@ -45,16 +79,32 @@ public class LancamentoService {
             .get();
 
         if (canApply(conta, net)) {
+//            lancamentoRepository.saveAll(loteDTO.getLancamentos().stream().map(this::from).toList());
             contaRepository.updateSaldo(loteDTO.getAgencia(), loteDTO.getConta(), net);
+//            contaRepository.updateSaldo(loteDTO.getAgencia(), loteDTO.getConta(), BigDecimal.ZERO);
         } else {
             //@Mamedio: after we aggregated the entries, what happend with them when we throw an exception for all (inside the batch)
             throw new RuntimeException("insufficient founds!");
         }
 
-        if (MESSAGE_COUNT >= 1000) {
-            System.out.println("END : " + System.currentTimeMillis());
+        if (MESSAGE_COUNT >= 500) {
+            long end = System.currentTimeMillis();
+            System.out.println("END : " + end);
+            long result = end - init;
+            System.out.println("RESULT : " + result);
+            MESSAGE_COUNT = 0;
         }
 
+    }
+
+    private Lancamento from(LancamentoDTO lancamentoDTO) {
+        Lancamento lancamento = new Lancamento();
+        lancamento.setAgencia(lancamentoDTO.getAgencia());
+        lancamento.setConta(lancamentoDTO.getConta());
+        lancamento.setValor(lancamentoDTO.getValor());
+        lancamento.setHistorico(1);
+        lancamento.setTipo(TipoLancamento.valueOf(lancamentoDTO.getTipo().name()));
+        return lancamento;
     }
 
     public void save(LancamentoDTO lancamentoDTO) {
@@ -91,8 +141,8 @@ public class LancamentoService {
 
     @Transactional
     public LoteDTO updateBalance(LoteDTO loteDTO) {
-        loteDTO.getLancamentos()
-               .forEach(l -> System.out.println(l.getConta() + " " + l.getDescricao() + " " + loteDTO.getUuid()));
+//        loteDTO.getLancamentos()
+//               .forEach(l -> System.out.println(MESSAGE_COUNT + " : " + l.getConta() + " " + l.getDescricao() + " " + loteDTO.getUuid()));
 
         Conta conta = getAndLockAccount(loteDTO.getAgencia(), loteDTO.getConta());
 

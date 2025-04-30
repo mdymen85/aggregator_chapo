@@ -42,6 +42,54 @@ public class Lancamento {
 
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Integer getAgencia() {
+        return agencia;
+    }
+
+    public void setAgencia(Integer agencia) {
+        this.agencia = agencia;
+    }
+
+    public Long getConta() {
+        return conta;
+    }
+
+    public void setConta(Long conta) {
+        this.conta = conta;
+    }
+
+    public BigDecimal getValor() {
+        return valor;
+    }
+
+    public void setValor(BigDecimal valor) {
+        this.valor = valor;
+    }
+
+    public Integer getHistorico() {
+        return historico;
+    }
+
+    public void setHistorico(Integer historico) {
+        this.historico = historico;
+    }
+
+    public TipoLancamento getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoLancamento tipo) {
+        this.tipo = tipo;
+    }
+
 //    public Lancamento from(Integer agencia, Long conta, BigDecimal valor, Integer historico, TipoLancamento tipo) {
 //        return Lancamento
 //            .builder()

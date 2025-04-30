@@ -30,6 +30,34 @@ public class LancamentoDTO implements Serializable {
     @JsonProperty("tipo")
     private TipoLancamento tipo;
 
+    public void setConta(Long conta) {
+        this.conta = conta;
+    }
+
+    public void setAgencia(Integer agencia) {
+        this.agencia = agencia;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    public BigDecimal getValor() {
+        return valor;
+    }
+
+    public void setValor(BigDecimal valor) {
+        this.valor = valor;
+    }
+
+    public TipoLancamento getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoLancamento tipo) {
+        this.tipo = tipo;
+    }
+
     public enum TipoLancamento {
         D, C
     }
