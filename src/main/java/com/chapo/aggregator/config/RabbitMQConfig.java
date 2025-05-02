@@ -4,13 +4,15 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@OnAggregatorDisabled
 public class RabbitMQConfig {
 
-    private final String queueName = "queue-aggregator-chapo-release"; // Replace with your desired queue name
+    private final String queueName = "queue-agreggator-chapo"; // Replace with your desired queue name
 
     @Bean
     public Queue directQueue() {

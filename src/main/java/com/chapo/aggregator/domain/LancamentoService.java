@@ -45,7 +45,11 @@ public class LancamentoService {
         1746014390306 - 1746014406980 = 16.674 seconds
         1746014407280 - 1746014423354 = 16.074 seconds
 
+        1 por fez sem Spring integration
+        1746186449257 - 1746186454812 = 5.555 seconds
+        1746186425001 - 1746186431228 = 6.227 seconds
 
+        16.68 seconds
 
      */
 
@@ -145,6 +149,11 @@ public class LancamentoService {
 //               .forEach(l -> System.out.println(MESSAGE_COUNT + " : " + l.getConta() + " " + l.getDescricao() + " " + loteDTO.getUuid()));
 
         Conta conta = getAndLockAccount(loteDTO.getAgencia(), loteDTO.getConta());
+        try {
+            Thread.sleep(20);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         save(loteDTO, conta);
 

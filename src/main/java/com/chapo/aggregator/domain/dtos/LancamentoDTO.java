@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.ToString;
 
 @Data
@@ -13,11 +12,9 @@ import lombok.ToString;
 @ToString
 public class LancamentoDTO implements Serializable {
 
-    @Getter
     @JsonProperty("conta")
     private Long conta;
 
-    @Getter
     @JsonProperty("agencia")
     private Integer agencia;
 
@@ -29,6 +26,18 @@ public class LancamentoDTO implements Serializable {
 
     @JsonProperty("tipo")
     private TipoLancamento tipo;
+
+    public LancamentoDTO() {
+
+    }
+
+    public LancamentoDTO(Integer agencia, Long conta, String descricao, BigDecimal valor, TipoLancamento tipo) {
+        this.agencia = agencia;
+        this.conta = conta;
+        this.descricao = descricao;
+        this.valor = valor;
+        this.tipo = tipo;
+    }
 
     public void setConta(Long conta) {
         this.conta = conta;

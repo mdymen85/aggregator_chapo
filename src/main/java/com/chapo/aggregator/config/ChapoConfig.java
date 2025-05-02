@@ -27,7 +27,7 @@ import org.springframework.messaging.MessageChannel;
 @EnableIntegration
 @Configuration
 @Slf4j
-//@OnAggregatorEnabled
+@OnAggregatorEnabled
 public class ChapoConfig {
 
     @Bean
@@ -63,8 +63,8 @@ public class ChapoConfig {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
-    @Autowired
-    private RabbitMQConfig rabbitMQConfig;
+//    @Autowired
+//    private RabbitMQConfig rabbitMQConfig;
 
     @Autowired
     private LancamentoService lancamentoService;

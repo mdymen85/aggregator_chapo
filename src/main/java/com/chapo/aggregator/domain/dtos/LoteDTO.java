@@ -22,6 +22,14 @@ public class LoteDTO implements Serializable {
         return lote;
     }
 
+    public static LoteDTO with(LancamentoDTO lancamento) {
+        LoteDTO lote = criarLote();
+        lote.agencia = lancamento.getAgencia();
+        lote.conta = lancamento.getConta();
+        lote.lancamentos.add(lancamento);
+        return lote;
+    }
+
     public void adicionarLancamento(LancamentoDTO lancamentoDTO) {
         agencia = lancamentoDTO.getAgencia();
         conta = lancamentoDTO.getConta();
