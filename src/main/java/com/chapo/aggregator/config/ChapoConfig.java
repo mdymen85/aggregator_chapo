@@ -5,6 +5,7 @@ import com.chapo.aggregator.domain.LancamentoService;
 import com.chapo.aggregator.domain.dtos.LancamentoDTO;
 import com.chapo.aggregator.domain.dtos.LoteDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Queue;
@@ -12,6 +13,7 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
@@ -30,9 +32,12 @@ import org.springframework.messaging.MessageChannel;
 @OnAggregatorEnabled
 public class ChapoConfig {
 
+    @Value("${application.aggregator.group-size:5}")
+    private int groupSize;
+
     @Bean
     public Queue myQueue() {
-        return new Queue("queue-agreggator-chapo", true); // Your queue name, durable
+        return new Queue("queue-agreggator-chapo", true);
     }
 
     @Bean("requestChannel")
@@ -63,9 +68,6 @@ public class ChapoConfig {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
-//    @Autowired
-//    private RabbitMQConfig rabbitMQConfig;
-
     @Autowired
     private LancamentoService lancamentoService;
 
@@ -75,7 +77,7 @@ public class ChapoConfig {
             .from("requestChannel")
             .aggregate(aggregatorSpec -> aggregatorSpec
                            .correlationStrategy(message -> ((Message<LancamentoDTO>) message).getPayload().getConta())
-                           .releaseStrategy(group -> group.size() >= 10)
+                           .releaseStrategy(group -> group.size() >= groupSize)
                            .outputProcessor(group -> {
                                LoteDTO loteDTO = LoteDTO.criarLote();
                                group.getMessages().forEach(message -> loteDTO.adicionarLancamento(((Message<LancamentoDTO>) message).getPayload()));
@@ -88,8 +90,10 @@ public class ChapoConfig {
                       )
             .channel("outputChannel")
             .<LoteDTO>handle(msgLote -> {
+                System.out.println("Inicio do processamento : " + System.currentTimeMillis());
                 LoteDTO loteDTO = ((LoteDTO)msgLote.getPayload());
                 lancamentoService.updateBalance(loteDTO);
+                System.out.println("Fim do processamento : " + System.currentTimeMillis());
 
 //                loteDTO.getLancamentoDTOS()
 //                       .forEach(l -> System.out.println(l.getConta() + " " + l.getDescricao() + " " + loteDTO.getUuid()));
@@ -113,6 +117,12 @@ public class ChapoConfig {
         }
 
         return initializer;
+    }
+
+    @PostConstruct
+    public void init() {
+        System.out.println("Aggregator enabled");
+        System.out.println("Group size : " + groupSize);
     }
 
 }

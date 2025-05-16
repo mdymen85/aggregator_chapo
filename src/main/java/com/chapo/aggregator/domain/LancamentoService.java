@@ -10,6 +10,7 @@ import com.chapo.aggregator.domain.repository.LancamentoRepository;
 import java.math.BigDecimal;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 //todo: evaluate use cache for the checking account
 public class LancamentoService {
+
+    @Value("${application.aggregator.sleep:20}")
+    private Integer sleep;
 
     /*
         1 per Lote
@@ -45,11 +49,38 @@ public class LancamentoService {
         1746014390306 - 1746014406980 = 16.674 seconds
         1746014407280 - 1746014423354 = 16.074 seconds
 
-        1 por fez sem Spring integration
+        sem Spring integration sem nenhum sleep
         1746186449257 - 1746186454812 = 5.555 seconds
         1746186425001 - 1746186431228 = 6.227 seconds
 
-        16.68 seconds
+        com sleep de 50ms sem Spring integration:
+        1747394009973 - 1747393993720 = 16.253 seconds
+        1747394025508 - 1747394010014 = 15.494 seconds
+        1747394041754 - 1747394025537 = 16.217 seconds
+
+        com sleep de 50ms com Spring Integration agrupando de a 10. -> provavelmente problema de memoria
+        1747394268221 - 1747394257776 = 10.455 seconds
+        1747394281339 - 1747394268248 = 13.091 seconds
+        1747394299955 - 1747394282750 = 17.205 seconds
+
+        com sleep de 50ms com Spring Integration agrupando de a 5. -> provavelmente problema de memoria
+        1747394736592 - 1747394725748 = 10.844 seconds
+        1747394756772 - 1747394736625 = 20.147 seconds
+        1747394778914 - 1747394756973 = 21.941 seconds
+
+        apos reiniciar : com sleep de 50ms com Spring Integration agrupando de a 5. -> provavelmente problema de memoria
+        1747395217828 - 1747395206596 = 11.232 seconds
+        1747395240948 - 1747395217856 = 23.092 seconds
+        1747395262956 - 1747395241187 = 21.769 seconds
+
+        1747395498561 - 1747395487264 = 11.297 seconds
+        1747395515995 - 1747395498593 = 17.402 seconds
+        1747395540325 - 1747395516698 = 23.627 seconds
+
+        de 1 em 1 -> lock. (A)
+        de 10 em 10 -> lock + acesso a base + net + memoria + spring integration (B)
+
+        (A) > (B)
 
      */
 
@@ -68,19 +99,21 @@ public class LancamentoService {
         int quantity = loteDTO.getLancamentos().size();
 
         long init = 0;
-        if (MESSAGE_COUNT == 0) {
-            init = System.currentTimeMillis();
-            System.out.println("INIT : " + init);
-        }
+//        if (MESSAGE_COUNT == 0) {
+//            init = System.currentTimeMillis();
+//            System.out.println("INIT : " + init);
+//        }
 
         MESSAGE_COUNT = MESSAGE_COUNT + quantity;
 
+        System.out.println("Inicio do NET : " + System.currentTimeMillis());
         BigDecimal net = loteDTO
             .getLancamentos()
             .stream()
             .map(LancamentoDTO::getValorWithSign)
             .reduce(BigDecimal::add)
             .get();
+        System.out.println("Fim do NET : " + System.currentTimeMillis());
 
         if (canApply(conta, net)) {
 //            lancamentoRepository.saveAll(loteDTO.getLancamentos().stream().map(this::from).toList());
@@ -91,13 +124,13 @@ public class LancamentoService {
             throw new RuntimeException("insufficient founds!");
         }
 
-        if (MESSAGE_COUNT >= 500) {
-            long end = System.currentTimeMillis();
-            System.out.println("END : " + end);
-            long result = end - init;
-            System.out.println("RESULT : " + result);
-            MESSAGE_COUNT = 0;
-        }
+//        if (MESSAGE_COUNT >= 500) {
+//            long end = System.currentTimeMillis();
+//            System.out.println("END : " + end);
+//            long result = end - init;
+//            System.out.println("RESULT : " + result);
+//            MESSAGE_COUNT = 0;
+//        }
 
     }
 
@@ -145,12 +178,10 @@ public class LancamentoService {
 
     @Transactional
     public LoteDTO updateBalance(LoteDTO loteDTO) {
-//        loteDTO.getLancamentos()
-//               .forEach(l -> System.out.println(MESSAGE_COUNT + " : " + l.getConta() + " " + l.getDescricao() + " " + loteDTO.getUuid()));
-
+        System.out.println("Inicio de lock : " + System.currentTimeMillis());
         Conta conta = getAndLockAccount(loteDTO.getAgencia(), loteDTO.getConta());
         try {
-            Thread.sleep(20);
+            Thread.sleep(sleep);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

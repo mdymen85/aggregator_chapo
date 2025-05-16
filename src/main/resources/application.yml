@@ -18,3 +18,5 @@ spring:
 application:
   aggregator:
     enabled: true
+    group-size: 5
+    sleep: 20

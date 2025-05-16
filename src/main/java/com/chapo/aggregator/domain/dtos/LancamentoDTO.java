@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.ToString;
 
 @Data
-@Builder
+//@Builder
 @ToString
 public class LancamentoDTO implements Serializable {
 
