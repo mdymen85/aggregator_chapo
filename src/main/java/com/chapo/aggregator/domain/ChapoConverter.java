@@ -24,7 +24,7 @@ public class ChapoConverter extends AllowedListDeserializingMessageConverter imp
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] payloadBytes = message.getBody();
         String payloadString = new String(payloadBytes, StandardCharsets.UTF_8); // Or another encoding
-//        System.out.println("Received message from RabbitMQ: " + payloadString);
+//        System.out.println("Received message from RabbitMQ: " + payloadString + " " + Thread.currentThread().getId());
         try {
             return objectMapper.readValue(payloadString, LancamentoDTO.class);
         } catch (JsonProcessingException e) {

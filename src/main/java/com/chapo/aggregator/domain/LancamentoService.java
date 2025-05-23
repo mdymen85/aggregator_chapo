@@ -82,6 +82,16 @@ public class LancamentoService {
 
         (A) > (B)
 
+        Teste - Máquina Mamédio
+
+        1747828010221 - 1747828010219 = 2 ms   - Inicio do processamento até Inicio de lock
+        1747828010248 - 1747828010221 = 27 ms  - Inicio de lock até Inicio do NET
+        1747828010248 - 1747828010248 = 0 ms   - Inicio do NET até Fim do NET
+        1747828010262 - 1747828010248 = 14 ms  - Fim do NET até Fim do processamento
+        1747828010426 - 1747828010262 = 164 ms - Fim do processamento até Inicio do processamento
+
+        Sem o aggregator, levou cerca de 220ms para processar 5 mensagens.
+
      */
 
     private static Integer MESSAGE_COUNT = 0;
@@ -106,14 +116,14 @@ public class LancamentoService {
 
         MESSAGE_COUNT = MESSAGE_COUNT + quantity;
 
-        System.out.println("Inicio do NET : " + System.currentTimeMillis());
+        System.out.println("[" + Thread.currentThread().getId() + "]" + "Inicio do NET : " + System.currentTimeMillis());
         BigDecimal net = loteDTO
             .getLancamentos()
             .stream()
             .map(LancamentoDTO::getValorWithSign)
             .reduce(BigDecimal::add)
             .get();
-        System.out.println("Fim do NET : " + System.currentTimeMillis());
+        System.out.println("[" + Thread.currentThread().getId() + "]" + "Fim do NET : " + System.currentTimeMillis());
 
         if (canApply(conta, net)) {
 //            lancamentoRepository.saveAll(loteDTO.getLancamentos().stream().map(this::from).toList());
@@ -178,7 +188,7 @@ public class LancamentoService {
 
     @Transactional
     public LoteDTO updateBalance(LoteDTO loteDTO) {
-        System.out.println("Inicio de lock : " + System.currentTimeMillis());
+        System.out.println("[" + Thread.currentThread().getId() + "]" + "Inicio de lock : " + System.currentTimeMillis());
         Conta conta = getAndLockAccount(loteDTO.getAgencia(), loteDTO.getConta());
         try {
             Thread.sleep(sleep);

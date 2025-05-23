@@ -9,7 +9,9 @@ import jakarta.annotation.PostConstruct;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,14 +48,34 @@ public class ChapoConfig {
     }
 
     @Bean
-    public AmqpInboundChannelAdapter amqpInbound(CachingConnectionFactory connectionFactory, Queue myQueue) {
-        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(connectionFactory);
-        container.setQueues(myQueue);
-        AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(container); // Correct constructor
+    public AmqpInboundChannelAdapter amqpInbound(SimpleMessageListenerContainer simpleMessageListenerContainer) {
+        AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(simpleMessageListenerContainer); // Correct constructor
         adapter.setOutputChannel(inputChannel());
         adapter.setMessageConverter(new ChapoConverter());
         return adapter;
     }
+
+    @Bean
+    public SimpleMessageListenerContainer simpleMessageListenerContainer(ConnectionFactory connectionFactory, Queue myQueue) {
+        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(connectionFactory);
+        container.setQueues(myQueue);
+        container.setConcurrentConsumers(5);
+        container.setMaxConcurrentConsumers(10);
+        container.setPrefetchCount(1);
+        return container;
+    }
+
+//    @Bean
+//    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
+//        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+//        factory.setConnectionFactory(connectionFactory);
+//        factory.setConcurrentConsumers(5);      // Start with 5 consumer threads
+//        factory.setMaxConcurrentConsumers(10);  // Allow up to 10 consumer threads
+//        factory.setPrefetchCount(1);           // Only fetch one message at a time per consumer
+//        // (important for fair dispatch in round-robin)
+//        factory.setDefaultRequeueRejected(false); // Do not requeue rejected messages by default
+//        return factory;
+//    }
 
     @Bean
     public ObjectMapper objectMapper() {
@@ -90,10 +112,10 @@ public class ChapoConfig {
                       )
             .channel("outputChannel")
             .<LoteDTO>handle(msgLote -> {
-                System.out.println("Inicio do processamento : " + System.currentTimeMillis());
+                System.out.println("[" + Thread.currentThread().getId() + "]" + "Inicio do processamento : " + System.currentTimeMillis());
                 LoteDTO loteDTO = ((LoteDTO)msgLote.getPayload());
                 lancamentoService.updateBalance(loteDTO);
-                System.out.println("Fim do processamento : " + System.currentTimeMillis());
+                System.out.println("[" + Thread.currentThread().getId() + "]" + "Fim do processamento : " + System.currentTimeMillis());
 
 //                loteDTO.getLancamentoDTOS()
 //                       .forEach(l -> System.out.println(l.getConta() + " " + l.getDescricao() + " " + loteDTO.getUuid()));

@@ -55,10 +55,11 @@ Message example:
 
 
 
+1748001142707 - 1748001142677 
 
 
-
-
+[52]Fim do processamento : 1748001142377
+[52]Inicio do processamento : 1748001142677
 
 
 
