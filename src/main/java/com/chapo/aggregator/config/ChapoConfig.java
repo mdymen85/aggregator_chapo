@@ -6,6 +6,7 @@ import com.chapo.aggregator.domain.dtos.LancamentoDTO;
 import com.chapo.aggregator.domain.dtos.LoteDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import java.time.LocalDateTime;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Queue;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
+import org.springframework.integration.channel.ExecutorChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -27,6 +29,7 @@ import org.springframework.integration.store.MessageGroupStore;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @EnableIntegration
 @Configuration
@@ -38,13 +41,36 @@ public class ChapoConfig {
     private int groupSize;
 
     @Bean
+    public ThreadPoolTaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);        // Número de hilos que siempre estarán activos
+        executor.setMaxPoolSize(5);        // Número máximo de hilos
+//        executor.setQueueCapacity(25);      // Capacidad de la cola para tareas pendientes
+        executor.setThreadNamePrefix("aggregator-worker-"); // Prefijo para los nombres de los hilos
+        executor.initialize();              // Inicializa el pool de hilos
+        return executor;
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor taskExecutorRequestChannel() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);        // Número de hilos que siempre estarán activos
+        executor.setMaxPoolSize(5);        // Número máximo de hilos
+//        executor.setQueueCapacity(25);      // Capacidad de la cola para tareas pendientes
+        executor.setThreadNamePrefix("request-worker-channel-"); // Prefijo para los nombres de los hilos
+        executor.initialize();              // Inicializa el pool de hilos
+        return executor;
+    }
+
+    @Bean
     public Queue myQueue() {
         return new Queue("queue-agreggator-chapo", true);
     }
 
     @Bean("requestChannel")
     public MessageChannel inputChannel() {
-        return new QueueChannel();
+        return new ExecutorChannel(taskExecutorRequestChannel());
+//        return new QueueChannel();
     }
 
     @Bean
@@ -60,8 +86,8 @@ public class ChapoConfig {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(connectionFactory);
         container.setQueues(myQueue);
         container.setConcurrentConsumers(5);
-        container.setMaxConcurrentConsumers(10);
-        container.setPrefetchCount(1);
+        container.setMaxConcurrentConsumers(5);
+        container.setPrefetchCount(10);
         return container;
     }
 
@@ -87,6 +113,11 @@ public class ChapoConfig {
         return new JdbcMessageStore(dataSource);
     }
 
+    @Bean
+    public MessageChannel aggregatedOutputExecutorChannel() {
+        return new ExecutorChannel(taskExecutor());
+    }
+
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
@@ -98,6 +129,7 @@ public class ChapoConfig {
         return IntegrationFlow
             .from("requestChannel")
             .aggregate(aggregatorSpec -> aggregatorSpec
+                           .async(true)
                            .correlationStrategy(message -> ((Message<LancamentoDTO>) message).getPayload().getConta())
                            .releaseStrategy(group -> group.size() >= groupSize)
                            .outputProcessor(group -> {
@@ -110,12 +142,16 @@ public class ChapoConfig {
                            .sendPartialResultOnExpiry(true)
 //                           .groupTimeout(1000) // Optional: Add a timeout for incomplete groups
                       )
-            .channel("outputChannel")
+            .channel(aggregatedOutputExecutorChannel())
+//            .channel("outputChannel")
             .<LoteDTO>handle(msgLote -> {
-                System.out.println("[" + Thread.currentThread().getId() + "]" + "Inicio do processamento : " + System.currentTimeMillis());
+                LocalDateTime now = LocalDateTime.now();
+//                System.out.println("[" + Thread.currentThread().getId() + "]" + "Inicio do processamento : " + System.currentTimeMillis());
                 LoteDTO loteDTO = ((LoteDTO)msgLote.getPayload());
+                System.out.println("[" + Thread.currentThread().getName() + "]" + "Conta : " + loteDTO.getConta() +  " Inicio do processamento em : " + now);
                 lancamentoService.updateBalance(loteDTO);
-                System.out.println("[" + Thread.currentThread().getId() + "]" + "Fim do processamento : " + System.currentTimeMillis());
+//                System.out.println("[" + Thread.currentThread().getId() + "]" + "Fim do processamento : " + System.currentTimeMillis());
+                System.out.println("[" + Thread.currentThread().getName() + "]" + "Conta : " + loteDTO.getConta() +  " Fim do processamento em : " + LocalDateTime.now());
 
 //                loteDTO.getLancamentoDTOS()
 //                       .forEach(l -> System.out.println(l.getConta() + " " + l.getDescricao() + " " + loteDTO.getUuid()));

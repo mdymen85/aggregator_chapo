@@ -61,7 +61,7 @@ Message example:
 [52]Fim do processamento : 1748001142377
 [52]Inicio do processamento : 1748001142677
 
-
+curl -L -w "time_namelookup: %{time_namelookup}\ntime_connect: %{time_connect}\ntime_appconnect: %{time_appconnect}\ntime_pretransfer: %{time_pretransfer}\ntime_redirect: %{time_redirect}\ntime_starttransfer: %{time_starttransfer}\ntime_total: %{time_total}\n" localhost:3306
 
 
 

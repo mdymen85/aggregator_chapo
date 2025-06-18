@@ -1,6 +1,7 @@
 package com.chapo.aggregator.domain.dtos;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +32,7 @@ public class LoteDTO implements Serializable {
     }
 
     public void adicionarLancamento(LancamentoDTO lancamentoDTO) {
+//        System.out.println("[" + Thread.currentThread().getName() + "]" + "Conta : " + lancamentoDTO.getConta() + " Adicionou lancamento : " + LocalDateTime.now());
         agencia = lancamentoDTO.getAgencia();
         conta = lancamentoDTO.getConta();
         this.lancamentos.add(lancamentoDTO);

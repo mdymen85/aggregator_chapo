@@ -8,7 +8,9 @@ import com.chapo.aggregator.domain.entities.TipoLancamento;
 import com.chapo.aggregator.domain.repository.ContaRepository;
 import com.chapo.aggregator.domain.repository.LancamentoRepository;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 //todo: evaluate use cache for the checking account
 public class LancamentoService {
+
+//    public static final ConcurrentHashMap<Long, Long> TIME = new ConcurrentHashMap<>();
 
     @Value("${application.aggregator.sleep:20}")
     private Integer sleep;
@@ -116,14 +120,14 @@ public class LancamentoService {
 
         MESSAGE_COUNT = MESSAGE_COUNT + quantity;
 
-        System.out.println("[" + Thread.currentThread().getId() + "]" + "Inicio do NET : " + System.currentTimeMillis());
+//        System.out.println("[" + Thread.currentThread().getId() + "]" + "Inicio do NET : " + System.currentTimeMillis());
         BigDecimal net = loteDTO
             .getLancamentos()
             .stream()
             .map(LancamentoDTO::getValorWithSign)
             .reduce(BigDecimal::add)
             .get();
-        System.out.println("[" + Thread.currentThread().getId() + "]" + "Fim do NET : " + System.currentTimeMillis());
+//        System.out.println("[" + Thread.currentThread().getId() + "]" + "Fim do NET : " + System.currentTimeMillis());
 
         if (canApply(conta, net)) {
 //            lancamentoRepository.saveAll(loteDTO.getLancamentos().stream().map(this::from).toList());
@@ -188,8 +192,9 @@ public class LancamentoService {
 
     @Transactional
     public LoteDTO updateBalance(LoteDTO loteDTO) {
-        System.out.println("[" + Thread.currentThread().getId() + "]" + "Inicio de lock : " + System.currentTimeMillis());
+        System.out.println("[" + Thread.currentThread().getName() + "]" + "Conta : " + loteDTO.getConta() + " Tenta pegar o lock : " + LocalDateTime.now());
         Conta conta = getAndLockAccount(loteDTO.getAgencia(), loteDTO.getConta());
+        System.out.println("[" + Thread.currentThread().getName() + "]" + "Conta : " + loteDTO.getConta() + " Lock foi pego : " + LocalDateTime.now());
         try {
             Thread.sleep(sleep);
         } catch (InterruptedException e) {

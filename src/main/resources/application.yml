@@ -14,12 +14,21 @@ spring:
     password: mdymen_pass
     driverClassName: com.mysql.cj.jdbc.Driver # Or the appropriate MySQL driver classa
     hikari: # HikariCP specific properties
-      maximum-pool-size: 20 # Maximum number of connections in the pool
-      minimum-idle: 5     # Minimum number of idle connections
+      maximum-pool-size: 40 # Maximum number of connections in the pool
+      minimum-idle: 10     # Minimum number of idle connections
       connection-timeout: 30000 # Maximum number of milliseconds that a client will wait for a connection from the pool. (default 30000ms)
       idle-timeout: 600000 # Maximum idle time for connections (default 10 minutes)
       max-lifetime: 1800000 # Maximum lifetime of a connection in the pool (default 30 minutes)
       # pool-name: MyCustomHikariPool # Optional: name for the connection pool
+  jpa:
+    show-sql: false
+#    properties:
+#      hibernate:
+#        format_sql: true
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 
 
@@ -27,4 +36,4 @@ application:
   aggregator:
     enabled: true
     group-size: 10
-    sleep: 20
+    sleep: 0

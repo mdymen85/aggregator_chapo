@@ -3,7 +3,6 @@ package com.chapo.aggregator.config;
 import com.chapo.aggregator.domain.LancamentoService;
 import com.chapo.aggregator.domain.dtos.LancamentoDTO;
 import com.chapo.aggregator.domain.dtos.LoteDTO;
-import com.chapo.aggregator.domain.entities.Lancamento;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -12,6 +11,7 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
 @Component
+@OnAggregatorDisabled
 public class MyMessageListener {
 
     private final LancamentoService lancamentoService;
